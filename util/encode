@@ -1,0 +1,38 @@
+#!/bin/bash
+#
+# encode
+# mperron (2019-2021)
+#
+# Create the assetblob file, which contains all assets. For each file in
+# the assets/ directory, base64 encode the data and output C++ code to
+# $OUTFILE containing that data as a string.
+
+OUTFILE=build/assetblob
+
+set -e
+if [ -e 'src/game/assets' ] && [ -e 'build/encoder' ]; then
+	cd src/game/assets
+
+	cat > "../../../$OUTFILE" <<-EOF
+	/*
+		Auto-generated asset file.
+	*/
+	EOF
+
+	for F in $(find); do
+		if [ ! -d "$F" ]; then
+			fname="${F#"./"}"
+			cat >> "../../../$OUTFILE" <<-EOF
+				FileLoader::load("$fname", new FileLoader(
+					$(stat -c '%s' "$F"),
+					"$fname",
+					$(../../../build/encoder "$F")
+				));
+			EOF
+		fi
+	done
+
+	cat >> "../../../$OUTFILE" <<-EOF
+		FileLoader::decode_all();
+	EOF
+fi
