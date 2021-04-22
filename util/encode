@@ -8,31 +8,31 @@
 # $OUTFILE containing that data as a string.
 
 OUTFILE=build/assetblob
+DATAPATH=src/game/assets
 
 set -e
 if [ -e 'src/game/assets' ] && [ -e 'build/encoder' ]; then
-	cd src/game/assets
 
-	cat > "../../../$OUTFILE" <<-EOF
+	cat > "$OUTFILE" <<-EOF
 	/*
 		Auto-generated asset file.
 	*/
 	EOF
 
-	for F in $(find); do
-		if [ ! -d "$F" ]; then
+	for F in $(cd $DATAPATH; find); do
+		if [ ! -d "$DATAPATH/$F" ]; then
 			fname="${F#"./"}"
-			cat >> "../../../$OUTFILE" <<-EOF
+			cat >> "$OUTFILE" <<-EOF
 				FileLoader::load("$fname", new FileLoader(
-					$(stat -c '%s' "$F"),
+					$(stat -c '%s' "$DATAPATH/$F"),
 					"$fname",
-					$(../../../build/encoder "$F")
+					$(build/encoder "$DATAPATH/$F")
 				));
 			EOF
 		fi
 	done
 
-	cat >> "../../../$OUTFILE" <<-EOF
+	cat >> "$OUTFILE" <<-EOF
 		FileLoader::decode_all();
 	EOF
 fi
