@@ -3,6 +3,9 @@ MINGW=x86_64-w64-mingw32-g++
 SRC_ENGINE=src/engine
 SRC_GAME=src/game
 
+WINDIR_SDLLIB=lib/SDL2-2.0.10/x86_64-w64-mingw32
+WINDIR_SDLMIXERLIB=lib/SDL2_mixer-2.0.4/x86_64-w64-mingw32
+
 all: build build/assetblob build/game win
 
 clean:
@@ -41,7 +44,7 @@ build/game.exe: build/game
 	@echo "Building for Windows..."
 	@if [ -n "`which "$(MINGW)"`" ]; then \
 		x86_64-w64-mingw32-windres src/engine/icon.rc build/icon-res.o; \
-		$(MINGW) $(GCC_ARGS) -static -o build/game.exe $(SRC_ENGINE)/main.cc build/icon-res.o -Lx86_64/lib -Lx86_64_mixer/lib -Ix86_64/include -Ix86_64/include/SDL2 -Ix86_64_mixer/include -lmingw32 -lSDL2main -lSDL2 -lSDL2_mixer -mwindows  -Wl,--no-undefined -Wl,--dynamicbase -Wl,--nxcompat -Wl,--high-entropy-va -lm -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lsetupapi -lversion -luuid -lstdc++fs -static-libgcc -static-libstdc++; \
+		$(MINGW) $(GCC_ARGS) -static -o build/game.exe $(SRC_ENGINE)/main.cc build/icon-res.o -L$(WINDIR_SDLLIB)/lib -L$(WINDIR_SDLMIXERLIB)/lib -I$(WINDIR_SDLLIB)/include -I$(WINDIR_SDLLIB)/include/SDL2 -I$(WINDIR_SDLMIXERLIB)/include -lmingw32 -lSDL2main -lSDL2 -lSDL2_mixer -mwindows  -Wl,--no-undefined -Wl,--dynamicbase -Wl,--nxcompat -Wl,--high-entropy-va -lm -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lsetupapi -lversion -luuid -lstdc++fs -static-libgcc -static-libstdc++; \
 		if [ -e build/game.exe ]; then chmod a-x build/game.exe; fi; \
 	else \
 		touch build/game.exe; \
