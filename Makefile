@@ -53,6 +53,6 @@ build/game.exe: build/game
 
 
 # Build the game for 64-bit Linux
-build/game: $(SRC_ENGINE)/main.cc build/assetblob $(SRC_ENGINE)/*.h $(SRC_GAME)/* $(SRC_GAME)/scenes/*
+build/game: $(SRC_ENGINE)/main.cc build/assetblob $(shell find $(SRC_ENGINE) -type f) $(shell find -L $(SRC_GAME) -type f)
 	@echo "Building for Linux..."
 	@g++ $(GCC_ARGS) -no-pie -I/usr/include -o build/game $(SRC_ENGINE)/main.cc -lstdc++fs -lSDL2 -lSDL2_mixer

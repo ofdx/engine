@@ -25,18 +25,20 @@ int render_scale_max = 5;
 
 #include "loader.h"
 #include "utility.h"
-#include "drawable.h"
-#include "movable.h"
-#include "clickable.h"
-#include "cardpanel.h"
 
-#include "text.h"
+#include "ables/drawable.h"
+#include "ables/movable.h"
+#include "ables/clickable.h"
+
+#include "gui/cardpanel.h"
+#include "gui/text.h"
+#include "gui/button.h"
+
 #include "scene.h"
-#include "particle.h"
-#include "button.h"
 
 // Particle effects.
-#include "snow.h"
+#include "fx/particle.h"
+#include "fx/snow.h"
 
 // Game code.
 #include "game/__game.h"
