@@ -120,7 +120,7 @@ public:
 		}
 	}
 
-	void set_click_region(SDL_Rect click_region){
+	void set_click_region(const SDL_Rect &click_region){
 		this->click_region = click_region;
 	}
 
