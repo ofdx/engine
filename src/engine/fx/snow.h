@@ -55,15 +55,16 @@ class SnowEffect : public ParticleEffect {
 		}
 	};
 
-	int speed_min, speed_max;
-	int sway;
-	int wind_angle, wind_force;
-	int count;
 
 	list<SnowFlake*> flakes;
 
 	float ticks;
 public:
+	int speed_min, speed_max;
+	int sway;
+	int wind_angle, wind_force;
+	int count;
+
 	SnowEffect(
 		SDL_Renderer *rend,
 		SDL_Rect area,

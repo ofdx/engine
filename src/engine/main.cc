@@ -12,9 +12,9 @@
 #include <regex>
 #include <filesystem>
 
-#define SCREEN_WIDTH  384
-#define SCREEN_HEIGHT 216
-#define SCREEN_FPS    120
+int SCREEN_WIDTH  = 384;
+int SCREEN_HEIGHT = 216;
+int SCREEN_FPS    = 120;
 
 #define PI 3.14159265359
 
