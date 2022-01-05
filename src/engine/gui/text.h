@@ -31,6 +31,9 @@ class PicoText :
 	unsigned int blink_off = 0;
 
 public:
+	// Debug flags
+	bool draw_frame = false;
+
 	PicoText(SDL_Renderer *rend, SDL_Rect region, string message) :
 		Drawable(rend)
 	{
@@ -66,6 +69,14 @@ public:
 	void draw(int ticks){
 		static unsigned int blink_counter = 0;
 
+		// Text frame for debug purposes.
+		if(draw_frame){
+			SDL_RenderDrawLine(rend, region.x, region.y, region.x + region.w, region.y);
+			SDL_RenderDrawLine(rend, region.x, region.y, region.x, region.y + region.h);
+			SDL_RenderDrawLine(rend, region.x + region.w, region.y + region.h, region.x, region.y + region.h);
+			SDL_RenderDrawLine(rend, region.x + region.w, region.y + region.h, region.x + region.w, region.y);
+		}
+
 		// Blink text.
 		if(blink_on || blink_off){
 			blink_counter += ticks;
@@ -91,7 +102,7 @@ public:
 		bool wrapped = false;
 		bool shadow = (shadow_offset_x || shadow_offset_y);
 
-		int chars_max = -1;
+		size_t chars_max = -1;
 		if(ticks_perchar){
 			unsigned int chars = ((ticks_passed + ticks) / ticks_perchar);
 
@@ -104,20 +115,27 @@ public:
 			}
 		}
 
+		size_t chars_printed = 0;
+		size_t chars_perline = ((region.w > c_width) ? ((region.w / c_width) - 1) : 0);
+		size_t chars_thisline = 0;
+
 		// FIXME This renders the text character by character on every single
 		// frame regardless of whether the text has changed. If we're not doing
 		// a delayed typewriter effect, and the text content or color hasn't
 		// changed, we should instead read from a texture which was
-		// pre-rendered. The method calls set_message and set_color could
-		// trigger a redraw.
-		int chars_printed = 0;
-		int chars_perline = (region.w / c_width), chars_thisline = 0;
+		// pre-rendered.
 		for(char c : message){
+			// Can't fit this text in this box.
+			if(dst.y - region.y + c_height > region.h)
+				break;
+
 			// Break early for the typewriter effect.
 			if((chars_max >= 0) && (chars_printed++ > chars_max))
 				break;
 
 			if(wrapped){
+				dst.x = region.x;
+				dst.y += (c_height + leading);
 				chars_thisline = 0;
 				wrapped = false;
 
@@ -165,11 +183,18 @@ public:
 			chars_thisline++;
 
 			// Automatically wrap at the edge of the text region.
-			// FIXME - this could be smarter, so it doesn't break up words.
-			if(chars_thisline > chars_perline){
-				dst.x = region.x;
-				dst.y += (c_height + leading);
+			if(chars_thisline > chars_perline)
 				wrapped = true;
+
+			// Wrap if a word won't fit unless the word is really big.
+			if(!wrapped && !c && (chars_thisline > (chars_perline / 2))){
+				size_t next_space_pos = message.find_first_of(" \n", chars_printed);
+
+				if(next_space_pos == string::npos)
+					next_space_pos = (message.size() - 1);
+
+				if((next_space_pos - chars_printed + chars_thisline) > chars_perline)
+					wrapped = true;
 			}
 		}
 	}
@@ -200,6 +225,7 @@ public:
 	// simulating a typewriter. Set to 0 (default) to disable this effect.
 	void set_ticks_perchar(int ticks){
 		ticks_perchar = ticks;
+		ticks_passed = 0;
 	}
 
 	void set_pos(int x, int y){

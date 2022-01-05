@@ -20,7 +20,7 @@ class Button : public Drawable, public Clickable {
 	void label_create(string text){
 		label = new PicoText(rend, (SDL_Rect){
 			click_region.x + 3, click_region.y + (click_region.h / 2) - 3,
-			click_region.w - 6, click_region.h - 7
+			click_region.w, click_region.h - 7
 		}, text);
 		label->set_color(color_label);
 	}
