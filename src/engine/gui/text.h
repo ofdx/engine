@@ -125,10 +125,6 @@ public:
 		// changed, we should instead read from a texture which was
 		// pre-rendered.
 		for(char c : message){
-			// Can't fit this text in this box.
-			if(dst.y - region.y + c_height > region.h)
-				break;
-
 			// Break early for the typewriter effect.
 			if((chars_max >= 0) && (chars_printed++ > chars_max))
 				break;
@@ -146,6 +142,10 @@ public:
 				if((c == '\n') || (c == ' '))
 					continue;
 			}
+
+			// Can't fit this text in this box.
+			if(dst.y - region.y + c_height > region.h)
+				break;
 
 			// New line and carriage return.
 			if(c == '\n'){
