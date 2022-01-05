@@ -159,6 +159,54 @@ public:
 		int get_volume(){
 			return volume;
 		}
+
+		// Takes a screenshot and returns it as a texture. Captured dimensions
+		// returned with w,h members of SDL_Rect dimensions.
+		SDL_Texture *screencap(SDL_Rect &dimensions){
+			int px_w = (SCREEN_WIDTH * render_scale);
+			int px_h = (SCREEN_HEIGHT * render_scale);
+			unsigned int format = SDL_PIXELFORMAT_ARGB8888;
+
+			dimensions = (SDL_Rect){
+				0, 0,
+				px_w, px_h
+			};
+
+			if(fullscreen){
+				SDL_DisplayMode dispmode;
+
+				if(SDL_GetWindowDisplayMode(win, &dispmode))
+					return NULL;
+
+				int aspect = (((double) px_w) / ((double) px_h));
+
+				px_w = dispmode.w;
+				px_h = dispmode.h;
+				format = dispmode.format;
+
+				if((((double) px_w) / ((double) px_h)) >= aspect){
+					// Screen is wider than aspect ratio
+					dimensions.w = (((double) px_h) / ((double) SCREEN_HEIGHT)) * SCREEN_WIDTH;
+					dimensions.h = px_h;
+				} else {
+					// Screen is narrower than aspect ratio
+					dimensions.h = (((double) px_w) / ((double) SCREEN_WIDTH)) * SCREEN_HEIGHT;
+					dimensions.w = px_w;
+				}
+			}
+
+			SDL_Surface *cap = SDL_CreateRGBSurfaceWithFormat(0, px_w, px_h, 32, format);
+
+			if(cap){
+				SDL_RenderReadPixels(rend, NULL, format, cap->pixels, cap->pitch);
+				SDL_Texture *tx = SDL_CreateTextureFromSurface(rend, cap);
+				SDL_FreeSurface(cap);
+
+				return tx;
+			}
+
+			return nullptr;
+		}
 	};
 
 protected:
