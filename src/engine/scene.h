@@ -126,9 +126,11 @@ public:
 
 			if(scene)
 				scene->draw(ticks);
+		}
 
+		void draw_cursor(){
 			// Draw mouse cursor
-			if(mouse_enabled && (SDL_GetRelativeMouseMode() != SDL_TRUE))
+			if(mouse_enabled && !scene_next && (SDL_GetRelativeMouseMode() != SDL_TRUE))
 				SDL_RenderCopy(rend, mouse_tx, NULL, &mouse_cursor);
 		}
 

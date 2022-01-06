@@ -163,11 +163,12 @@ int main(int argc, char **argv){
 			}
 		}
 
+		// Draw cursor and flip to display this frame.
+		ctrl->draw_cursor();
+		SDL_RenderPresent(rend);
+
 		// Draw the current scene.
 		ctrl->draw(ticks);
-
-		// Flip the display buffer.
-		SDL_RenderPresent(rend);
 
 		// Delay to limit to approximately SCREEN_FPS.
 		{

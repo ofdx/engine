@@ -33,6 +33,7 @@ class PicoText :
 public:
 	// Debug flags
 	bool draw_frame = false;
+	char pointer_char = 0;
 
 	PicoText(SDL_Renderer *rend, SDL_Rect region, string message) :
 		Drawable(rend)
@@ -126,8 +127,15 @@ public:
 		// pre-rendered.
 		for(char c : message){
 			// Break early for the typewriter effect.
-			if((chars_max >= 0) && (chars_printed++ > chars_max))
+			if((chars_max >= 0) && (chars_printed++ > chars_max)){
+				// Show a little caret character at the end of the current line.
+				if(pointer_char){
+					src.x = (pointer_char - ' ') * c_width;
+					SDL_RenderCopy(rend, font, &src, &dst);
+				}
+
 				break;
+			}
 
 			if(wrapped){
 				dst.x = region.x;
@@ -201,6 +209,7 @@ public:
 
 	void set_message(string message){
 		this->message = message;
+		ticks_passed = 0;
 	}
 
 	// Set the color of the text at any time.
