@@ -119,4 +119,8 @@ public:
 		label->set_alpha(alpha);
 		this->alpha = alpha;
 	}
+
+	void set_message(string message){
+		label->set_message(message);
+	}
 };

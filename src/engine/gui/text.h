@@ -1,6 +1,6 @@
 /*
 	PicoText
-	mperron (2019)
+	mperron (2022)
 
 	A class which draws text onto the screen using a bitmap font.
 */
@@ -30,6 +30,69 @@ class PicoText :
 	unsigned int blink_on = 0;
 	unsigned int blink_off = 0;
 
+	size_t scroll_pos = 0;
+	vector<string> message_lines;
+
+	void populateLineVector(){
+		stringstream ss;
+		bool wrapped = false;
+
+		size_t chars_printed = 0;
+		size_t chars_perline = ((region.w > c_width) ? ((region.w / c_width) - 1) : 0);
+		size_t chars_thisline = 0;
+
+		message_lines.clear();
+
+		for(char c : message){
+			chars_printed++;
+
+			if(wrapped || (c == '\n')){
+				chars_thisline = 0;
+				wrapped = false;
+
+				message_lines.push_back(ss.str());
+				ss.str("");
+
+				// If the text just wrapped at the edge of the text region, skip a
+				// following space which would be at the start of the line and look
+				// bad, and a following newline which would otherwise result in a
+				// double newline.
+				if((c == '\n') || (c == ' '))
+					continue;
+			}
+
+			ss << c;
+			chars_thisline++;
+
+			// Automatically wrap at the edge of the text region.
+			if(chars_thisline > chars_perline)
+				wrapped = true;
+
+			// Wrap if a word won't fit unless the word is really big.
+			if(!wrapped && (c == ' ') && (chars_thisline > (chars_perline / 2))){
+				size_t next_space_pos = message.find_first_of(" \n", chars_printed);
+
+				if(next_space_pos == string::npos)
+					next_space_pos = (message.size() - 1);
+
+				if((next_space_pos - chars_printed + chars_thisline) > chars_perline)
+					wrapped = true;
+			}
+		}
+
+		// Last line.
+		{
+			string final = ss.str();
+
+			if(final.size())
+				message_lines.push_back(final);
+		}
+
+		// If we're scrolled past the end of the new message text, this will put
+		// us on the last line.
+		set_scroll(scroll_pos);
+	}
+
 public:
 	// Debug flags
 	bool draw_frame = false;
@@ -39,7 +102,7 @@ public:
 		Drawable(rend)
 	{
 		this->region = region;
-		this->message = message;
+		set_message(message);
 
 		// Load the default font image.
 		font = textureFromBmp(rend, "fonts/6x7.bmp", true);
@@ -67,6 +130,22 @@ public:
 		this->c_height = c_height;
 	}
 
+	size_t get_scroll(){
+		return scroll_pos;
+	}
+	void set_scroll(size_t pos){
+		scroll_pos = min(pos, message_lines.size() - 1);
+	}
+	void set_scroll_offset(int offset){
+		if((offset < 0) && ((size_t)(offset * -1) > scroll_pos))
+			scroll_pos = 0;
+		else
+			scroll_pos += offset;
+
+		if(scroll_pos > message_lines.size() - 1)
+			scroll_pos = message_lines.size() - 1;
+	}
+
 	void draw(int ticks){
 		static unsigned int blink_counter = 0;
 
@@ -91,7 +170,6 @@ public:
 				blink_counter -= (blink_on + blink_off);
 		}
 
-
 		SDL_Rect src = (SDL_Rect){
 			0,0,
 			c_width, c_height
@@ -100,9 +178,9 @@ public:
 			region.x, region.y,
 			c_width, c_height
 		};
-		bool wrapped = false;
 		bool shadow = (shadow_offset_x || shadow_offset_y);
 
+		size_t chars_printed = 0;
 		size_t chars_max = -1;
 		if(ticks_perchar){
 			unsigned int chars = ((ticks_passed + ticks) / ticks_perchar);
@@ -116,99 +194,62 @@ public:
 			}
 		}
 
-		size_t chars_printed = 0;
-		size_t chars_perline = ((region.w > c_width) ? ((region.w / c_width) - 1) : 0);
-		size_t chars_thisline = 0;
+		size_t scroll = 0;
+		for(string l : message_lines){
+			if(scroll++ < scroll_pos)
+				continue;
 
-		// FIXME This renders the text character by character on every single
-		// frame regardless of whether the text has changed. If we're not doing
-		// a delayed typewriter effect, and the text content or color hasn't
-		// changed, we should instead read from a texture which was
-		// pre-rendered.
-		for(char c : message){
-			// Break early for the typewriter effect.
-			if((chars_max >= 0) && (chars_printed++ > chars_max)){
-				// Show a little caret character at the end of the current line.
-				if(pointer_char){
-					src.x = (pointer_char - ' ') * c_width;
-					SDL_RenderCopy(rend, font, &src, &dst);
+			for(char c : l){
+				// Break early for the typewriter effect.
+				if((chars_max >= 0) && (chars_printed++ > chars_max)){
+					// Show a little caret character at the end of the current line.
+					if(pointer_char){
+						src.x = (pointer_char - ' ') * c_width;
+						SDL_RenderCopy(rend, font, &src, &dst);
+					}
+
+					return;
 				}
 
-				break;
+				if((c >= 'a') && (c <= 'z'))
+					c -= 0x20;
+
+				// The font starts at space.
+				c -= ' ';
+
+				// Unknown characters print a space.
+				if(c >= 65)
+					c = 0;
+
+				src.x = (c * c_width);
+
+				if(shadow){
+					SDL_Rect dst_shadow = (SDL_Rect){
+						dst.x + shadow_offset_x, dst.y + shadow_offset_y,
+						dst.w + shadow_offset_x, dst.h + shadow_offset_y
+					};
+
+					SDL_RenderCopy(rend, font_shadow, &src, &dst_shadow);
+				}
+
+				SDL_RenderCopy(rend, font, &src, &dst);
+
+				dst.x += c_width;
 			}
 
-			if(wrapped){
-				dst.x = region.x;
-				dst.y += (c_height + leading);
-				chars_thisline = 0;
-				wrapped = false;
-
-				// If the text just wrapped at the edge of the text region, skip a
-				// following space which would be at the start of the line and look
-				// bad, and a following newline which would otherwise result in a
-				// double newline.
-				if((c == '\n') || (c == ' '))
-					continue;
-			}
+			// New line
+			dst.x = region.x;
+			dst.y += (c_height + leading);
 
 			// Can't fit this text in this box.
 			if(dst.y - region.y + c_height > region.h)
 				break;
-
-			// New line and carriage return.
-			if(c == '\n'){
-				dst.x = region.x;
-				dst.y += (c_height + leading);
-				chars_thisline = 0;
-
-				continue;
-			}
-
-			if((c >= 'a') && (c <= 'z'))
-				c -= 0x20;
-
-			// The font starts at space.
-			c -= ' ';
-
-			// Unknown characters print a space.
-			if(c >= 65)
-				c = 0;
-
-			src.x = (c * c_width);
-
-			if(shadow){
-				SDL_Rect dst_shadow = (SDL_Rect){
-					dst.x + shadow_offset_x, dst.y + shadow_offset_y,
-					dst.w + shadow_offset_x, dst.h + shadow_offset_y
-				};
-
-				SDL_RenderCopy(rend, font_shadow, &src, &dst_shadow);
-			}
-
-			SDL_RenderCopy(rend, font, &src, &dst);
-
-			dst.x += c_width;
-			chars_thisline++;
-
-			// Automatically wrap at the edge of the text region.
-			if(chars_thisline > chars_perline)
-				wrapped = true;
-
-			// Wrap if a word won't fit unless the word is really big.
-			if(!wrapped && !c && (chars_thisline > (chars_perline / 2))){
-				size_t next_space_pos = message.find_first_of(" \n", chars_printed);
-
-				if(next_space_pos == string::npos)
-					next_space_pos = (message.size() - 1);
-
-				if((next_space_pos - chars_printed + chars_thisline) > chars_perline)
-					wrapped = true;
-			}
 		}
 	}
 
 	void set_message(string message){
 		this->message = message;
+		populateLineVector();
 		ticks_passed = 0;
 	}
 
