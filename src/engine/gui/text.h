@@ -247,6 +247,9 @@ public:
 		}
 	}
 
+	string get_message(){
+		return message;
+	}
 	void set_message(string message){
 		this->message = message;
 		populateLineVector();
