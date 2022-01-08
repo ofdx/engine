@@ -319,10 +319,10 @@ class TextBox : public PicoText, public Clickable {
 
 	uint8_t m_mb_down = 0;
 
-    enum SCROLL_BAR_ARROW { NONE, UP, DOWN, BAR, BAR_ABOVE, BAR_BELOW } m_arrow_in;
+    enum SCROLL_BAR_ARROW { NONE, UP, DOWN, BAR, BAR_ABOVE, BAR_BELOW, BOX } m_arrow_in;
 	bool m_sb_active = false;
-	int m_sb_active_at = 0;
-	int m_sb_active_pos = 0;
+	int m_sb_active_at = -1;
+	int m_sb_active_pos = -1;
 	int m_sb_height = 0, m_sb_height_max = 0;
 
     // Returns true if changed. Detect whether the mouse was over the up or down button.
@@ -332,8 +332,17 @@ class TextBox : public PicoText, public Clickable {
         int of_x = screen_x - m_bounds.x;
         int of_y = screen_y - m_bounds.y;
 
+		if((of_x > 0) && (of_x < m_bounds.w) && (of_y > 0) && (of_y < m_bounds.h)){
+			// The mouse is anywhere in the field.
+			m_arrow_in = BOX;
+			mouse_in = true;
+		} else {
+			m_arrow_in = NONE;
+			mouse_in = false;
+		}
+
         // In X
-        if((of_x >= (m_bounds.w - SCROLL_BAR_WIDTH)) && (of_x < m_bounds.w)){
+        if(mouse_in && (of_x >= (m_bounds.w - SCROLL_BAR_WIDTH)) && (of_x < m_bounds.w)){
 			int sb_pos = get_sb_pos();
 
 			mouse_in = true;
@@ -408,9 +417,9 @@ public:
 	virtual void check_mouse(SDL_Event event){
 		Clickable::check_mouse(event);
 
-		if(m_sb_active){
-			switch(event.type){
-				case SDL_MOUSEMOTION:
+		switch(event.type){
+			case SDL_MOUSEMOTION:
+				if(m_sb_active){
 					int delta_px = event.button.y - m_sb_active_at;
 					int sb_pos = m_sb_active_pos + delta_px;
 
@@ -426,8 +435,15 @@ public:
 					double ratio = ((double) (sb_pos - sb_min)) / (sb_max - sb_min);
 
 					set_scroll((size_t)(ratio * get_line_count()));
-					break;
-			}
+				}
+				break;
+
+			case SDL_MOUSEWHEEL:
+				// Process mouse wheel events if we are not dragging the scrollbar already.
+				if(!m_sb_active && mouse_in)
+					set_scroll_offset(-event.wheel.y);
+
+				break;
 		}
 	}
 
@@ -512,7 +528,11 @@ public:
 				SCROLL_BAR_WIDTH, m_sb_height
 			};
 
-			sethlcolor(BAR);
+			if(m_mb_down && ((m_arrow_in == BAR) || m_sb_active))
+				SDL_SetRenderDrawColor(rend, sb_r_hl, sb_g_hl, sb_b_hl, 0xff);
+			else
+				SDL_SetRenderDrawColor(rend, sb_r, sb_g, sb_b, 0xff);
+
 			SDL_RenderFillRect(rend, &sb_at);
 		}
     }

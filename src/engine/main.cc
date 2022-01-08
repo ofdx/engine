@@ -143,6 +143,7 @@ int main(int argc, char **argv){
 				case SDL_MOUSEMOTION:
 				case SDL_MOUSEBUTTONDOWN:
 				case SDL_MOUSEBUTTONUP:
+				case SDL_MOUSEWHEEL:
 				case SDL_FINGERDOWN:
 				case SDL_FINGERUP:
 					ctrl->check_mouse(event);
