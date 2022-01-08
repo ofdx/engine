@@ -257,7 +257,7 @@ public:
 	}
 
 	// Set the color of the text at any time.
-	void set_color(char r, char g, char b, bool shadow = false){
+	virtual void set_color(char r, char g, char b, bool shadow = false){
 		SDL_SetTextureColorMod((shadow ? font_shadow : font), r, g, b);
 	}
 	void set_color(SDL_Color col, bool shadow = false){
@@ -285,59 +285,102 @@ public:
 		region.x = x;
 		region.y = y;
 	}
+	void set_size(int w, int h){
+		region.w = w;
+		region.h = h;
 
-	class Box :
-		public Drawable,
-		public Movable
-	{
-	public:
-		PicoText *text_label;
-		int width;
-
-		Box(SDL_Renderer *rend, int x, int y, string text) :
-			Drawable(rend),
-			Movable(x, y)
-		{
-			text_label = new PicoText(rend, (SDL_Rect){ x, y, 100, 10, }, "");
-			text_label->set_message(text);
-		}
-
-		~Box(){
-			delete text_label;
-		}
-
-		void draw(int ticks){
-			movable_update(ticks);
-			width = 0;
-
-			int x_cur = movable_x(), y_cur = movable_y();
-
-			if(text_label->message.length()){
-				width = 6 + (6 * text_label->message.length());
-
-				SDL_Rect window = (SDL_Rect){
-					x_cur, y_cur,
-					width, 11
-				};
-
-				// Border
-				SDL_SetRenderDrawColor(rend, 0x40, 0x40, 0x40, 0xff);
-				SDL_RenderDrawRect(rend, &window);
-
-				window = (SDL_Rect){
-					window.x + 1, window.y + 1,
-					window.w - 2, window.h - 2
-				};
-
-				// Background
-				SDL_SetRenderDrawColor(rend, 0x80, 0x80, 0x80, 0xff);
-				SDL_RenderFillRect(rend, &window);
-
-				// Text content.
-				text_label->set_pos(window.x + 2, window.y + 1);
-				text_label->draw(ticks);
-			}
-		}
-	};
+		populateLineVector();
+	}
 };
 
+/*
+	TextBox
+	mperron (2022)
+
+    Text box with an interactive scroll bar.
+*/
+class TextBox : public PicoText, public Clickable {
+    const static int SCROLL_BAR_WIDTH = 4;
+    const static int SCROLL_ARROW_HEIGHT = 4;
+
+    SDL_Rect m_bounds;
+    uint8_t sb_r = 0xff, sb_g = 0xff, sb_b = 0xff;
+
+    enum SCROLL_BAR_ARROW { UP, DOWN } m_arrow_in;
+
+    // Returns true if changed. Detect whether the mouse was over the up or down button.
+    virtual bool is_mouse_in(int screen_x, int screen_y){
+        bool was_mouse_in = mouse_in;
+
+        int of_x = screen_x - m_bounds.x;
+        int of_y = screen_y - m_bounds.y;
+
+        // In X
+        if((of_x >= (m_bounds.w - SCROLL_BAR_WIDTH)) && (of_x < m_bounds.w)){
+            if((of_y > 0) && (of_y <= SCROLL_ARROW_HEIGHT)){
+                // Mouse over the up scroll arrow.
+                m_arrow_in = UP;
+                mouse_in = true;
+            } else if((of_y >= (m_bounds.h - SCROLL_ARROW_HEIGHT)) && (of_y < m_bounds.h)){
+                // Mouse over the down scroll arrow.
+                m_arrow_in = DOWN;
+                mouse_in = true;
+            } else
+                mouse_in = false;
+        }
+
+        bool changed = (was_mouse_in == mouse_in);
+        was_mouse_in = mouse_in;
+
+        return changed;
+    }
+
+public:
+    TextBox(SDL_Renderer *rend, SDL_Rect bounds, string message) :
+        PicoText(rend, (SDL_Rect){}, message),
+        Clickable(bounds),
+        m_bounds(bounds),
+        m_arrow_in(DOWN)
+    {
+        // Set text output size to exclude scrollbar area.
+        set_size(bounds.w - (SCROLL_BAR_WIDTH + 1), bounds.h);
+        set_pos(bounds.x, bounds.y);
+    }
+
+    ~TextBox(){}
+
+	virtual void on_mouse_click(SDL_MouseButtonEvent event){
+        switch(m_arrow_in){
+            case UP:
+                set_scroll_offset(-1);
+                break;
+
+            case DOWN:
+                set_scroll_offset(1);
+                break;
+        }
+    }
+
+	virtual void set_color(char r, char g, char b, bool shadow = false){
+        PicoText::set_color(r, g, b, shadow);
+
+        sb_r = r;
+        sb_b = b;
+        sb_g = g;
+	}
+
+	void draw(int ticks){
+        PicoText::draw(ticks);
+		SDL_SetRenderDrawColor(rend, sb_r, sb_g, sb_b, 0xff);
+
+        SDL_Rect arrow_at = (SDL_Rect){
+            m_bounds.x + m_bounds.w - SCROLL_BAR_WIDTH, m_bounds.y,
+            SCROLL_BAR_WIDTH, SCROLL_ARROW_HEIGHT
+        };
+
+		SDL_RenderFillRect(rend, &arrow_at);
+
+        arrow_at.y = m_bounds.y + m_bounds.h - SCROLL_ARROW_HEIGHT;
+		SDL_RenderFillRect(rend, &arrow_at);
+    }
+};
