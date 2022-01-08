@@ -14,11 +14,12 @@
 		void on_mouse_out(SDL_MouseMotionEvent event){}
 */
 class Clickable {
+protected:
 	bool mouse_in = false;
 	bool mouse_down_in = false;
 
 	// Returns true if the mouse_in state changed.
-	bool is_mouse_in(int screen_x, int screen_y){
+	virtual bool is_mouse_in(int screen_x, int screen_y){
 		bool was_mouse_in = mouse_in;
 
 		// Check if the mouse is inside the region.
@@ -33,7 +34,6 @@ class Clickable {
 		return (mouse_in != was_mouse_in);
 	}
 
-protected:
 	// The region which is considered clickable.
 	SDL_Rect click_region = { 0, 0, 0, 0 };
 

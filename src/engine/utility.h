@@ -87,3 +87,20 @@ int slide_quad(int from, int to, int time, int ticks, float &progress){
 	progress = 32.0f;
 	return to;
 }
+
+uint32_t get_surface_pixel(SDL_Surface *surface, int x, int y)
+{
+    int bpp = surface->format->BytesPerPixel;
+    uint8_t *p = (uint8_t*) surface->pixels + (y * surface->pitch) + (x * bpp);
+
+	switch (bpp)
+	{
+		case 1: return *p;
+		case 2: return *((uint16_t*) p);
+		case 3: return ((SDL_BYTEORDER == SDL_BIG_ENDIAN) ? ((p[0] << 16) | (p[1] << 8) | p[2]) : (p[0] | (p[1] << 8) | (p[2] << 16)));
+		case 4: return *(uint32_t *)p;
+	}
+
+	// Hopefully shouldn't happen.
+	return 0;
+}
