@@ -508,18 +508,19 @@ public:
             SCROLL_BAR_WIDTH, SCROLL_ARROW_HEIGHT
         };
 	
-		#define sethlcolor(BTN) \
-			if(m_mb_down && (m_arrow_in == BTN)) \
+		#define draw_scroll_button(BTN) \
+			if(m_mb_down && (m_arrow_in == BTN)){ \
+				SDL_SetRenderDrawColor(rend, sb_r, sb_g, sb_b, 0xff); \
+				SDL_RenderFillRect(rend, &arrow_at); \
 				SDL_SetRenderDrawColor(rend, sb_r_hl, sb_g_hl, sb_b_hl, 0xff); \
-			else \
-				SDL_SetRenderDrawColor(rend, sb_r, sb_g, sb_b, 0xff);
+			} else \
+				SDL_SetRenderDrawColor(rend, sb_r, sb_g, sb_b, 0xff); \
+			SDL_RenderDrawRect(rend, &arrow_at);
 
-		sethlcolor(UP);
-		SDL_RenderFillRect(rend, &arrow_at);
 
-		sethlcolor(DOWN);
+		draw_scroll_button(UP);
         arrow_at.y = m_bounds.y + m_bounds.h - SCROLL_ARROW_HEIGHT;
-		SDL_RenderFillRect(rend, &arrow_at);
+		draw_scroll_button(DOWN);
 
 		// Draw the scroll bar if appropriate.
 		if(m_sb_height){
@@ -528,12 +529,15 @@ public:
 				SCROLL_BAR_WIDTH, m_sb_height
 			};
 
-			if(m_mb_down && ((m_arrow_in == BAR) || m_sb_active))
-				SDL_SetRenderDrawColor(rend, sb_r_hl, sb_g_hl, sb_b_hl, 0xff);
-			else
+			if(m_mb_down && ((m_arrow_in == BAR) || m_sb_active)){
 				SDL_SetRenderDrawColor(rend, sb_r, sb_g, sb_b, 0xff);
+				SDL_RenderFillRect(rend, &sb_at);
+				SDL_SetRenderDrawColor(rend, sb_r_hl, sb_g_hl, sb_b_hl, 0xff);
+			} else {
+				SDL_SetRenderDrawColor(rend, sb_r, sb_g, sb_b, 0xff);
+			}
 
-			SDL_RenderFillRect(rend, &sb_at);
+			SDL_RenderDrawRect(rend, &sb_at);
 		}
     }
 };
