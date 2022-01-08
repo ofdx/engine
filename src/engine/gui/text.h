@@ -310,8 +310,8 @@ public:
     Text box with an interactive scroll bar.
 */
 class TextBox : public PicoText, public Clickable {
-    const static int SCROLL_BAR_WIDTH = 4;
-    const static int SCROLL_ARROW_HEIGHT = 4;
+    const static int SCROLL_BAR_WIDTH = 5;
+    const static int SCROLL_ARROW_HEIGHT = 5;
 
     SDL_Rect m_bounds;
     uint8_t sb_r = 0xff, sb_g = 0xff, sb_b = 0xff;
@@ -332,7 +332,7 @@ class TextBox : public PicoText, public Clickable {
         int of_x = screen_x - m_bounds.x;
         int of_y = screen_y - m_bounds.y;
 
-		if((of_x > 0) && (of_x < m_bounds.w) && (of_y > 0) && (of_y < m_bounds.h)){
+		if((of_x >= 0) && (of_x < m_bounds.w) && (of_y >= 0) && (of_y < m_bounds.h)){
 			// The mouse is anywhere in the field.
 			m_arrow_in = BOX;
 			mouse_in = true;
@@ -350,7 +350,7 @@ class TextBox : public PicoText, public Clickable {
 			if((screen_y >= sb_pos) && (screen_y < (sb_pos + m_sb_height))){
 				// Mouse over the scroll bar.
 				m_arrow_in = BAR;
-			} else if((of_y > 0) && (of_y <= SCROLL_ARROW_HEIGHT)){
+			} else if((of_y >= 0) && (of_y < SCROLL_ARROW_HEIGHT)){
                 // Mouse over the up scroll arrow.
                 m_arrow_in = UP;
             } else if((of_y >= (m_bounds.h - SCROLL_ARROW_HEIGHT)) && (of_y < m_bounds.h)){
