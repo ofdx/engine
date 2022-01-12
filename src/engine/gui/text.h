@@ -232,7 +232,7 @@ public:
 				if(shadow){
 					SDL_Rect dst_shadow = (SDL_Rect){
 						dst.x + shadow_offset_x, dst.y + shadow_offset_y,
-						dst.w + shadow_offset_x, dst.h + shadow_offset_y
+						dst.w, dst.h
 					};
 
 					SDL_RenderCopy(rend, font_shadow, &src, &dst_shadow);
