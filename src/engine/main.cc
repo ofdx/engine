@@ -29,6 +29,7 @@ int render_scale_max = 5;
 #include "ables/drawable.h"
 #include "ables/movable.h"
 #include "ables/clickable.h"
+#include "ables/typable.h"
 
 #include "gui/cardpanel.h"
 #include "gui/text.h"
@@ -138,6 +139,7 @@ int main(int argc, char **argv){
 					break;
 				case SDL_KEYDOWN:
 					(*keys)[event.key.keysym.sym] = true;
+					ctrl->keydown(event.key);
 					break;
 
 				case SDL_MOUSEMOTION:

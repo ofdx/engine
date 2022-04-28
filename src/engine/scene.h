@@ -11,6 +11,7 @@ protected:
 
 	list<Drawable*> drawables;
 	list<Clickable*> clickables;
+	list<Typable*> typables;
 
 public:
 	virtual ~Scene(){
@@ -32,6 +33,14 @@ public:
 	virtual void check_mouse(SDL_Event event){
 		for(auto clickable : clickables)
 			clickable->check_mouse(event);
+	}
+
+	virtual void keydown(SDL_KeyboardEvent event){
+		for(auto typable : typables)
+			typable->keydown(event);
+	}
+
+	virtual void receive_data(string data){
 	}
 
 	class Controller : public Drawable {
@@ -87,17 +96,23 @@ public:
 
 		// Ascend from the current sub-scene to the parent scene on the stack.
 		// Returns NULL if there is no previous scene on the stack.
-		Scene *scene_ascend(){
+		Scene *scene_ascend(string data){
 			if(scene_stack.size() > 0){
 				Scene *scene_next = scene_stack.back();
 
 				scene_stack.pop_back();
 				set_scene(scene_next);
 
+				if(data.size())
+					scene_next->receive_data(data);
+
 				return scene_next;
 			}
 
 			return NULL;
+		}
+		Scene *scene_ascend(){
+			return scene_ascend("");
 		}
 
 		void draw(int ticks){
@@ -152,6 +167,10 @@ public:
 		// Get the up/down state of a key. True if keydown.
 		bool keystate(int keysym){
 			return (*keys)[keysym];
+		}
+
+		void keydown(SDL_KeyboardEvent event){
+			scene->keydown(event);
 		}
 
 		void set_volume(int vol){
