@@ -79,6 +79,28 @@ public:
 				SDL_DestroyTexture(mouse_tx);
 		}
 
+		void set_render_scale(int scale){
+			if(scale < 1)
+				scale = 1;
+
+			if(scale > render_scale_max)
+				scale = render_scale_max;
+
+			if(scale != render_scale){
+				int x, y;
+
+				SDL_GetMouseState(&x, &y);
+
+				x = x * scale / render_scale;
+				y = y * scale / render_scale;
+				render_scale = scale;
+
+				SDL_RenderSetLogicalSize(rend, SCREEN_WIDTH, SCREEN_HEIGHT);
+				SDL_SetWindowSize(win, (SCREEN_WIDTH * render_scale), (SCREEN_HEIGHT * render_scale));
+				SDL_WarpMouseInWindow(win, x, y);
+			}
+		}
+
 		SDL_Renderer *renderer(){
 			return rend;
 		}
