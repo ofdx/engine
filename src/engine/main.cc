@@ -72,7 +72,7 @@ int main(int argc, char **argv){
 
 	SDL_Event event;
 
-    if(SDL_Init(SDL_INIT_EVERYTHING)){
+	if(SDL_Init(SDL_INIT_EVERYTHING)){
 		cout << "Failed to init SDL: " << SDL_GetError() << endl;
 		return -1;
 	}

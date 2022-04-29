@@ -90,8 +90,8 @@ int slide_quad(int from, int to, int time, int ticks, float &progress){
 
 uint32_t get_surface_pixel(SDL_Surface *surface, int x, int y)
 {
-    int bpp = surface->format->BytesPerPixel;
-    uint8_t *p = (uint8_t*) surface->pixels + (y * surface->pitch) + (x * bpp);
+	int bpp = surface->format->BytesPerPixel;
+	uint8_t *p = (uint8_t*) surface->pixels + (y * surface->pitch) + (x * bpp);
 
 	switch (bpp)
 	{

@@ -307,30 +307,30 @@ public:
 	TextBox
 	mperron (2022)
 
-    Text box with an interactive scroll bar.
+	Text box with an interactive scroll bar.
 */
 class TextBox : public PicoText, public Clickable {
-    const static int SCROLL_BAR_WIDTH = 5;
-    const static int SCROLL_ARROW_HEIGHT = 5;
+	const static int SCROLL_BAR_WIDTH = 5;
+	const static int SCROLL_ARROW_HEIGHT = 5;
 
-    SDL_Rect m_bounds;
-    uint8_t sb_r = 0xff, sb_g = 0xff, sb_b = 0xff;
+	SDL_Rect m_bounds;
+	uint8_t sb_r = 0xff, sb_g = 0xff, sb_b = 0xff;
 	uint8_t sb_r_hl = 0xff, sb_g_hl = 0xff, sb_b_hl = 0xff;
 
 	uint8_t m_mb_down = 0;
 
-    enum SCROLL_BAR_ARROW { NONE, UP, DOWN, BAR, BAR_ABOVE, BAR_BELOW, BOX } m_arrow_in;
+	enum SCROLL_BAR_ARROW { NONE, UP, DOWN, BAR, BAR_ABOVE, BAR_BELOW, BOX } m_arrow_in;
 	bool m_sb_active = false;
 	int m_sb_active_at = -1;
 	int m_sb_active_pos = -1;
 	int m_sb_height = 0, m_sb_height_max = 0;
 
-    // Returns true if changed. Detect whether the mouse was over the up or down button.
-    virtual bool is_mouse_in(int screen_x, int screen_y){
-        bool was_mouse_in = mouse_in;
+	// Returns true if changed. Detect whether the mouse was over the up or down button.
+	virtual bool is_mouse_in(int screen_x, int screen_y){
+		bool was_mouse_in = mouse_in;
 
-        int of_x = screen_x - m_bounds.x;
-        int of_y = screen_y - m_bounds.y;
+		int of_x = screen_x - m_bounds.x;
+		int of_y = screen_y - m_bounds.y;
 
 		if((of_x >= 0) && (of_x < m_bounds.w) && (of_y >= 0) && (of_y < m_bounds.h)){
 			// The mouse is anywhere in the field.
@@ -341,8 +341,8 @@ class TextBox : public PicoText, public Clickable {
 			mouse_in = false;
 		}
 
-        // In X
-        if(mouse_in && (of_x >= (m_bounds.w - SCROLL_BAR_WIDTH)) && (of_x < m_bounds.w)){
+		// In X
+		if(mouse_in && (of_x >= (m_bounds.w - SCROLL_BAR_WIDTH)) && (of_x < m_bounds.w)){
 			int sb_pos = get_sb_pos();
 
 			mouse_in = true;
@@ -351,28 +351,28 @@ class TextBox : public PicoText, public Clickable {
 				// Mouse over the scroll bar.
 				m_arrow_in = BAR;
 			} else if((of_y >= 0) && (of_y < SCROLL_ARROW_HEIGHT)){
-                // Mouse over the up scroll arrow.
-                m_arrow_in = UP;
-            } else if((of_y >= (m_bounds.h - SCROLL_ARROW_HEIGHT)) && (of_y < m_bounds.h)){
-                // Mouse over the down scroll arrow.
-                m_arrow_in = DOWN;
+				// Mouse over the up scroll arrow.
+				m_arrow_in = UP;
+			} else if((of_y >= (m_bounds.h - SCROLL_ARROW_HEIGHT)) && (of_y < m_bounds.h)){
+				// Mouse over the down scroll arrow.
+				m_arrow_in = DOWN;
 			} else if((of_y > SCROLL_ARROW_HEIGHT) && (screen_y < sb_pos)){
 				// Mouse between up arrow and scroll bar.
 				m_arrow_in = BAR_ABOVE;
 			} else if((of_y < (m_bounds.h - SCROLL_ARROW_HEIGHT)) && (screen_y > (sb_pos + m_sb_height))){
 				// Mouse between scroll bar and down arrow.
 				m_arrow_in = BAR_BELOW;
-            } else {
+			} else {
 				m_arrow_in = NONE;
-                mouse_in = false;
+				mouse_in = false;
 			}
-        }
+		}
 
-        bool changed = (was_mouse_in == mouse_in);
-        was_mouse_in = mouse_in;
+		bool changed = (was_mouse_in == mouse_in);
+		was_mouse_in = mouse_in;
 
-        return changed;
-    }
+		return changed;
+	}
 
 	double get_scroll_ratio(){
 		if(get_line_count() > 1)
@@ -401,18 +401,18 @@ class TextBox : public PicoText, public Clickable {
 	}
 
 public:
-    TextBox(SDL_Renderer *rend, SDL_Rect bounds, string message) :
-        PicoText(rend, bounds, message),
-        Clickable(bounds),
-        m_bounds(bounds),
-        m_arrow_in(NONE)
-    {
-        // Set text output size to exclude scrollbar area.
-        set_size(bounds.w - (SCROLL_BAR_WIDTH + 1), bounds.h);
-        set_pos(bounds.x, bounds.y);
-    }
+	TextBox(SDL_Renderer *rend, SDL_Rect bounds, string message) :
+		PicoText(rend, bounds, message),
+		Clickable(bounds),
+		m_bounds(bounds),
+		m_arrow_in(NONE)
+	{
+		// Set text output size to exclude scrollbar area.
+		set_size(bounds.w - (SCROLL_BAR_WIDTH + 1), bounds.h);
+		set_pos(bounds.x, bounds.y);
+	}
 
-    ~TextBox(){}
+	~TextBox(){}
 
 	virtual void check_mouse(SDL_Event event){
 		Clickable::check_mouse(event);
@@ -465,14 +465,14 @@ public:
 	}
 
 	virtual void on_mouse_click(SDL_MouseButtonEvent event){
-        switch(m_arrow_in){
-            case UP:
-                set_scroll_offset(-1);
-                break;
+		switch(m_arrow_in){
+			case UP:
+				set_scroll_offset(-1);
+				break;
 
-            case DOWN:
-                set_scroll_offset(1);
-                break;
+			case DOWN:
+				set_scroll_offset(1);
+				break;
 
 			case BAR_ABOVE:
 				set_scroll_offset(-get_window_lines());
@@ -484,15 +484,15 @@ public:
 
 			default:
 				break;
-        }
-    }
+		}
+	}
 
 	virtual void set_color(char r, char g, char b, bool shadow = false){
-        PicoText::set_color(r, g, b, shadow);
+		PicoText::set_color(r, g, b, shadow);
 
-        sb_r = r;
-        sb_g = g;
-        sb_b = b;
+		sb_r = r;
+		sb_g = g;
+		sb_b = b;
 	}
 	void set_color_hl(char r, char g, char b){
 		sb_r_hl = r;
@@ -501,12 +501,12 @@ public:
 	}
 
 	void draw(int ticks){
-        PicoText::draw(ticks);
+		PicoText::draw(ticks);
 
-        SDL_Rect arrow_at = (SDL_Rect){
-            m_bounds.x + m_bounds.w - SCROLL_BAR_WIDTH, m_bounds.y,
-            SCROLL_BAR_WIDTH, SCROLL_ARROW_HEIGHT
-        };
+		SDL_Rect arrow_at = (SDL_Rect){
+			m_bounds.x + m_bounds.w - SCROLL_BAR_WIDTH, m_bounds.y,
+			SCROLL_BAR_WIDTH, SCROLL_ARROW_HEIGHT
+		};
 	
 		#define draw_scroll_button(BTN) \
 			if(m_mb_down && (m_arrow_in == BTN)){ \
@@ -519,7 +519,7 @@ public:
 
 
 		draw_scroll_button(UP);
-        arrow_at.y = m_bounds.y + m_bounds.h - SCROLL_ARROW_HEIGHT;
+		arrow_at.y = m_bounds.y + m_bounds.h - SCROLL_ARROW_HEIGHT;
 		draw_scroll_button(DOWN);
 
 		// Draw the scroll bar if appropriate.
@@ -539,5 +539,5 @@ public:
 
 			SDL_RenderDrawRect(rend, &sb_at);
 		}
-    }
+	}
 };
