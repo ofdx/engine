@@ -13,6 +13,11 @@ clean:
 	@echo "Removing build output directory..."
 	@rm -rf build
 
+dist: all
+	@echo "Strip debug symbols..."
+	@strip build/game
+	@strip build/game.exe
+
 run: all
 	@build/game
 
