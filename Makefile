@@ -1,4 +1,4 @@
-GCC_ARGS=-Ofast -Wall --std=c++17 -s -Ibuild/ -Wno-unused-result -Isrc/
+GCC_ARGS=-Ofast -Wall --std=c++17 -Ibuild/ -Wno-unused-result -Isrc/
 MINGW=x86_64-w64-mingw32-g++
 SRC_ENGINE=src/engine
 SRC_GAME=src/game

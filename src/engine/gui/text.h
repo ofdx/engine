@@ -102,6 +102,7 @@ public:
 	// Debug flags
 	bool draw_frame = false;
 	char pointer_char = 0;
+	bool draw_cursor = false;
 
 	PicoText(SDL_Renderer *rend, SDL_Rect region, string message) :
 		Drawable(rend)
@@ -180,7 +181,7 @@ public:
 			c_width, c_height
 		};
 		SDL_Rect dst = (SDL_Rect){
-			region.x, region.y,
+			region.x, region.y - (c_height + leading),
 			c_width, c_height
 		};
 		bool shadow = (shadow_offset_x || shadow_offset_y);
@@ -205,7 +206,13 @@ public:
 			if(scroll++ < scroll_pos)
 				continue;
 
+			// New line
+			dst.x = region.x - c_width;
+			dst.y += (c_height + leading);
+
 			for(char c : l){
+				dst.x += c_width;
+
 				// Break early for the typewriter effect.
 				if((chars_max >= 0) && (chars_printed++ > chars_max)){
 					// Show a little caret character at the end of the current line.
@@ -239,18 +246,36 @@ public:
 				}
 
 				SDL_RenderCopy(rend, font, &src, &dst);
-
-				dst.x += c_width;
 			}
 
 			// Can't fit any more text in this box.
 			if(++printed_lines >= window_lines)
 				break;
-
-			// New line
-			dst.x = region.x;
-			dst.y += (c_height + leading);
 		}
+
+		// Draw a blinking cursor.
+		if(draw_cursor){
+			static bool displaycursor = false;
+			static int tickcounter = 0;
+
+			tickcounter += ticks;
+
+			if(tickcounter > (displaycursor ? 300 : 200)){
+				displaycursor = !displaycursor;
+				tickcounter = 0;
+			}
+
+			if(displaycursor){
+				SDL_Rect cursor = (SDL_Rect){
+					dst.x + c_width, dst.y + c_height - 3,
+					c_width - 1, 2
+				};
+
+				SDL_SetRenderDrawColor(rend, 0, 0xff, 0, 0xff);
+				SDL_RenderDrawRect(rend, &cursor);
+			}
+		}
+
 	}
 
 	string get_message(){ return message; }
