@@ -16,8 +16,6 @@ int SCREEN_WIDTH  = 384;
 int SCREEN_HEIGHT = 216;
 int SCREEN_FPS    = 120;
 
-#define PI 3.14159265359
-
 using namespace std;
 
 int render_scale = 5;
