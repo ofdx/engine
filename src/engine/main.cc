@@ -12,9 +12,9 @@
 #include <regex>
 #include <filesystem>
 
-int SCREEN_WIDTH  = 384;
-int SCREEN_HEIGHT = 216;
-int SCREEN_FPS    = 120;
+#define SCREEN_WIDTH  384
+#define SCREEN_HEIGHT 216
+#define SCREEN_FPS    120
 
 using namespace std;
 
