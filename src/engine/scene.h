@@ -40,7 +40,7 @@ public:
 			typable->keydown(event);
 	}
 
-	virtual void receive_data(string data){
+	virtual void receive_data(string const& data){
 	}
 
 	class Controller : public Drawable {
