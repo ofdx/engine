@@ -53,6 +53,7 @@ public:
 		int volume = 128;
 
 	public:
+		int render_scale;
 		const int render_scale_max;
 
 		Scene *scene = NULL;
@@ -62,9 +63,10 @@ public:
 		bool mouse_enabled = true;
 		SDL_Rect mouse_cursor;
 
-		Controller(SDL_Window *win, SDL_Renderer *rend, int render_scale, map<int, bool> *keys) :
+		Controller(SDL_Window *win, SDL_Renderer *rend, int scale, int scale_max, map<int, bool> *keys) :
 			Drawable(rend),
-			render_scale_max(render_scale)
+			render_scale(scale),
+			render_scale_max(scale_max)
 		{
 			this->keys = keys;
 			this->win = win;

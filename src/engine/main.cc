@@ -1,6 +1,10 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include <iostream>
 #include <map>
 #include <unordered_map>
@@ -17,9 +21,6 @@
 #define SCREEN_FPS    120
 
 using namespace std;
-
-int render_scale = 5;
-int render_scale_max = 5;
 
 #include "loader.h"
 #include "utility.h"
@@ -61,83 +62,83 @@ string get_save_path(){
 	return pref_path;
 }
 
-int main(int argc, char **argv){
-#include "assetblob"
+struct EngineContext {
+	bool run;
+	SDL_Window *pWin;
+	SDL_Renderer *pRend;
+	map<int, bool> *pKeys;
+	Scene::Controller *pCtrl;
 
-	// Load preferences (might override render_scale or volume setting).
-	// TODO
-	//PersistenceHandler *preferences = PersistenceHandler::inst();
+	int ticks_last;
 
-	SDL_Event event;
-
-	if(SDL_Init(SDL_INIT_EVERYTHING)){
-		cout << "Failed to init SDL: " << SDL_GetError() << endl;
-		return -1;
-	}
-	SDL_ShowCursor(SDL_DISABLE);
-
-	// Enable audio
-	if(Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, MIX_CHANNELS, 1024)){
-		cout << "Failed to initialize audio." << endl;
-		return -2;
-	}
-
-	// Automatically set default value based on desktop resolution.
+	EngineContext() :
+		run(true),
+		pKeys(new map<int, bool>())
 	{
-		SDL_DisplayMode mode;
+		// Automatically set default value based on desktop resolution.
+		int render_scale = 5;
+		int render_scale_max = 5;
+		{
+			SDL_DisplayMode mode;
 
-		if(!SDL_GetDesktopDisplayMode(0, &mode)){
-			int width = mode.w / SCREEN_WIDTH;
-			int height = mode.h / SCREEN_HEIGHT;
+			if(!SDL_GetDesktopDisplayMode(0, &mode)){
+				int width = mode.w / SCREEN_WIDTH;
+				int height = mode.h / SCREEN_HEIGHT;
 
-			render_scale_max = ((width > height) ? height : width) - 1;
-			render_scale = render_scale_max - 1;
+				render_scale_max = ((width > height) ? height : width) - 1;
+				render_scale = render_scale_max - 1;
+			}
+
+			/*if(preferences->data->render_scale && (preferences->data->render_scale <= render_scale_max))
+				render_scale = preferences->data->render_scale;*/
 		}
 
-		/*if(preferences->data->render_scale && (preferences->data->render_scale <= render_scale_max))
-			render_scale = preferences->data->render_scale;*/
+		pWin = SDL_CreateWindow(GAME_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, (SCREEN_WIDTH * render_scale), (SCREEN_HEIGHT * render_scale), SDL_WINDOW_SHOWN);
+		pRend = SDL_CreateRenderer(pWin, -1, 0);
+
+		SDL_SetRenderDrawBlendMode(pRend, SDL_BLENDMODE_BLEND);
+		SDL_RenderSetLogicalSize(pRend, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+		// Create controller and load the first scene.
+		pCtrl = new Scene::Controller(pWin, pRend, render_scale, render_scale_max, pKeys);
+		registerScenes(pCtrl);
+		pCtrl->set_scene(Scene::create(pCtrl, "intro"));
+
+		//pCtrl->set_volume(preferences->data->volume);
+
+		/*if(preferences->data->fullscreen){
+			SDL_SetWindowFullscreen(pCtrl->win, SDL_WINDOW_FULLSCREEN_DESKTOP);
+			pCtrl->fullscreen = true;
+		}*/
+
+		ticks_last = SDL_GetTicks();
 	}
+};
 
+static void gameloop(void *pCtxVoid){
+	EngineContext *pCtx = (EngineContext*) pCtxVoid;
 
-	SDL_Window *win = SDL_CreateWindow(GAME_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, (SCREEN_WIDTH * render_scale), (SCREEN_HEIGHT * render_scale), SDL_WINDOW_SHOWN);
-
-	// Create a renderer for the window we'll draw everything to.
-	SDL_Renderer *rend = SDL_CreateRenderer(win, -1, 0);
-	SDL_SetRenderDrawBlendMode(rend, SDL_BLENDMODE_BLEND);
-	SDL_RenderSetLogicalSize(rend, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-	map<int, bool> *keys = new map<int, bool>();
-
-	// Create controller and load the first scene.
-	Scene::Controller *ctrl = new Scene::Controller(win, rend, render_scale_max, keys);
-
-	registerScenes(ctrl);
-	ctrl->set_scene(Scene::create(ctrl, "intro"));
-	//ctrl->set_volume(preferences->data->volume);
-
-	/*if(preferences->data->fullscreen){
-		SDL_SetWindowFullscreen(ctrl->win, SDL_WINDOW_FULLSCREEN_DESKTOP);
-		ctrl->fullscreen = true;
-	}*/
-
-	int ticks_last = SDL_GetTicks();
-	while(1){
+	while(pCtx->run){
 		int ticks_now = SDL_GetTicks();
-		const int ticks = ticks_now - ticks_last;
+		const int ticks = ticks_now - pCtx->ticks_last;
+		SDL_Event event;
 
 		// Check for an event without waiting.
 		while(SDL_PollEvent(&event)){
 			switch(event.type){
+#ifndef __EMSCRIPTEN__
 				case SDL_QUIT:
-					goto quit;
+					pCtx->run = false;
+					break;
+#endif
 
 				// Map out keystates
 				case SDL_KEYUP:
-					(*keys)[event.key.keysym.sym] = false;
+					(*(pCtx->pKeys))[event.key.keysym.sym] = false;
 					break;
 				case SDL_KEYDOWN:
-					(*keys)[event.key.keysym.sym] = true;
-					ctrl->keydown(event.key);
+					(*(pCtx->pKeys))[event.key.keysym.sym] = true;
+					pCtx->pCtrl->keydown(event.key);
 					break;
 
 				case SDL_MOUSEMOTION:
@@ -146,7 +147,7 @@ int main(int argc, char **argv){
 				case SDL_MOUSEWHEEL:
 				case SDL_FINGERDOWN:
 				case SDL_FINGERUP:
-					ctrl->check_mouse(event);
+					pCtx->pCtrl->check_mouse(event);
 					break;
 
 				case SDL_WINDOWEVENT:
@@ -154,9 +155,9 @@ int main(int argc, char **argv){
 					switch(event.window.event){
 						case SDL_WINDOWEVENT_FOCUS_LOST:
 							// Disable fullscreen if we lose focus, because SDL doesn't handle it well.
-							if(ctrl->fullscreen){
-								SDL_SetWindowFullscreen(ctrl->win, 0);
-								ctrl->fullscreen = false;
+							if(pCtx->pCtrl->fullscreen){
+								SDL_SetWindowFullscreen(pCtx->pCtrl->win, 0);
+								pCtx->pCtrl->fullscreen = false;
 							}
 							break;
 					}
@@ -165,11 +166,11 @@ int main(int argc, char **argv){
 		}
 
 		// Draw cursor and flip to display this frame.
-		ctrl->draw_cursor();
-		SDL_RenderPresent(rend);
+		pCtx->pCtrl->draw_cursor();
+		SDL_RenderPresent(pCtx->pRend);
 
 		// Draw the current scene.
-		ctrl->draw(ticks);
+		pCtx->pCtrl->draw(ticks);
 
 		// Delay to limit to approximately SCREEN_FPS.
 		{
@@ -181,13 +182,40 @@ int main(int argc, char **argv){
 		}
 
 		// Update tick counter.
-		ticks_last = ticks_now;
+		pCtx->ticks_last = ticks_now;
+	}
+}
+
+int main(int argc, char **argv){
+#include "assetblob"
+
+	// Load preferences (might override render_scale or volume setting).
+	// TODO
+	//PersistenceHandler *preferences = PersistenceHandler::inst();
+
+	if(SDL_Init(SDL_INIT_EVERYTHING & ~(SDL_INIT_TIMER | SDL_INIT_HAPTIC))){
+		cout << "Failed to init SDL: " << SDL_GetError() << endl;
+		return -1;
+	}
+	SDL_ShowCursor(SDL_DISABLE);
+
+	// Enable audio
+	if(Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, MIX_CHANNELS, 1024)){
+		cout << "Failed to initialize audio." << endl;
+		return -2;
 	}
 
-quit:
+	EngineContext *pCtx = new EngineContext();
+
+#ifdef __EMSCRIPTEN__
+	emscripten_set_main_loop_arg(gameloop, (void*) pCtx, 0, 1);
+#else
+	while(pCtx->run) { gameloop(pCtx); }
+
 	// Clean up and close SDL library.
 	Mix_CloseAudio();
 	SDL_Quit();
+#endif
 
 	return 0;
 }

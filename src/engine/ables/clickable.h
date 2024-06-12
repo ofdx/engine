@@ -85,7 +85,7 @@ public:
 
 				if(mouse_in){
 					SDL_MouseButtonEvent event_fake = {
-						button: SDL_BUTTON_LEFT
+						.button = SDL_BUTTON_LEFT
 					};
 
 					on_mouse_down(event_fake);
@@ -107,7 +107,7 @@ public:
 			case SDL_FINGERUP:
 			{
 				SDL_MouseButtonEvent event_fake = {
-					button: SDL_BUTTON_LEFT
+					.button = SDL_BUTTON_LEFT
 				};
 
 				on_mouse_up(event_fake);

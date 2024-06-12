@@ -7,7 +7,7 @@ WINDIR_SDLLIB=lib/SDL2-2.0.10/x86_64-w64-mingw32
 WINDIR_SDLMIXERLIB=lib/SDL2_mixer-2.0.4/x86_64-w64-mingw32
 WINDIR_SDLNET=lib/SDL2_net-2.0.1/x86_64-w64-mingw32
 
-all: build build/assetblob build/game win
+all: build build/assetblob build/game
 
 clean:
 	@echo "Removing build output directory..."
@@ -42,11 +42,18 @@ build/encoder: $(SRC_ENGINE)/encoder.c $(SRC_ENGINE)/base64.h
 	@echo "Building base64 encode utility..."
 	@gcc -o build/encoder $(SRC_ENGINE)/encoder.c
 
+# Build the game for WASM with emscripten
+web: build/game.js
+
+build/game.js: all
+	@echo "Building with emscripten for WASM..."
+	@em++ $(GCC_ARGS) -o build/game.js $(SRC_ENGINE)/main.cc -s USE_SDL=2 -s USE_SDL_MIXER=2 -s USE_SDL_NET=2 -s USE_PTHREADS
+
 
 # Build the game for 64-bit Windows
 win: build/game.exe
 
-build/game.exe: build/game
+build/game.exe: all
 	@echo "Building for Windows..."
 	@if [ -n "`which "$(MINGW)"`" ]; then \
 		x86_64-w64-mingw32-windres src/engine/icon.rc build/icon-res.o; \
